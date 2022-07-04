@@ -165,6 +165,32 @@ def newplayer():
         return render_template("newplayer.html")
 
 
+@app.route("/alias", methods=["GET", "POST"])
+@login_required
+def alias():
+    """Enter new alias/name pairs"""
+    # User reached route via POST (as by submitting a form via POST)
+    if request.method == "POST":
+
+        alias = request.form.get("alias")
+        name = request.form.get("name")
+        add_another = request.form.get("add_another")
+
+        db.execute("SELECT player_id FROM players WHERE name = '%s'" % (name))
+        playerID = db.fetchone()
+
+        sql = """INSERT INTO aliases (aliases_player_id, aliases_alias) VALUES (%s,%s)"""
+        db.execute(sql, (playerID[0], alias))
+        conn.commit()
+
+        if add_another == "1":
+            return render_template("alias.html", players = get_players())
+        else:
+            return render_template("index.html", players = get_players())
+
+    else:
+        return render_template("alias.html", players = get_players())
+
 
 
 

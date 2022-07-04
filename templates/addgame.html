@@ -1,0 +1,64 @@
+{% extends "layout.html" %}
+
+{% block title %}
+    Buy
+{% endblock %}
+
+{% block main %}
+    <form action="/addgame" method="post" enctype=multipart/form-data>
+        <div class="form-group">
+            <label for="gameDate">Game Date</label>
+            <input class="form-control" name="date" placeholder="Date of Game" type="date" id="gameDate" required>
+        </div>
+
+        <div class="form-group">
+            <select class="form-control" name="type" required>
+                <option disabled selected value>Poker Type</option>
+                <option value="nlh">NL Texas Hold'em</option>
+                <option value="plo">Pot Limit Omaha</option>
+            </select>
+        </div>
+
+        <div class="form-group">
+            <select class="form-control" name="bigblind" required>
+                <option disabled selected value>Big Blind Value</option>
+                <option value=".5">$0.50</option>
+                <option value="1">$1</option>
+                <option value="3">$3</option>
+                <option value="5">$5</option>
+            </select>
+        </div>
+
+        <div class="form-group">
+            <select class="form-control" name="table_num" required>
+                <option disabled selected value>Table Number</option>
+                <option value="1">1</option>
+                <option value="2">2</option>
+                <option value="3">3</option>
+                <option value="4">4</option>
+            </select>
+        </div>
+
+        <div class="form-group">
+            <select class="form-control" name="bank">
+                <option disabled selected value>Who was Bank?</option>
+                {% for person in players %}
+                    <option value="{{ person["name"] }}">{{ person["name"]}}</option>
+                {% endfor %}
+            </select>
+        </div>
+
+        <div class="form-group">
+            <select class="form-control" name="trackmoney" required>
+                <option disabled selected value>Track Payments for this game?</option>
+                <option value="0">No</option>
+                <option value="1">Yes</option>
+            </select>
+        </div>
+
+        <input type=file name=fileupload>
+
+        <button class="btn btn-primary" type="submit">Add Game</button>
+    </form>
+
+{% endblock %}

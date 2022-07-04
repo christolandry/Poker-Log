@@ -192,6 +192,69 @@ def alias():
         return render_template("alias.html", players = get_players())
 
 
+@app.route("/games", methods=["GET", "POST"])
+@login_required
+def games():
+    """Shows Games"""
+    poker_group = get_db()
+
+    # get the dates games happend so they can be selected in the drop down menu.
+    db.execute("SELECT date FROM games WHERE games_db = '%s' GROUP BY date ORDER BY date DESC LIMIT 10" % (poker_group))
+    gamedates = toList(db.description, db.fetchall())
+
+    # date of game requested, default is the lastest date a game was played if a date wasn't requested
+    request_date = request.form.get("date")
+    db.execute("SELECT date FROM games WHERE games_db = '%s' ORDER BY date DESC LIMIT 1" % (poker_group))
+    latest_date = db.fetchone()
+    if latest_date is None:
+        return render_template("games.html")
+    date = request_date if request_date else latest_date[0]
+
+    # get game ids from that date.
+    db.execute("SELECT * FROM games WHERE (date = '%s' AND games_db = '%s') ORDER BY table_number" % (date, poker_group))
+    games = toList(db.description, db.fetchall())
+
+    # get all players who played on the date in question.
+    players = []
+    for row in games:
+        db.execute("SELECT name FROM players JOIN sessions ON players.player_id = sessions.sessions_player_id WHERE (sessions_game_id = '%s' AND players_db = '%s')" % (row["game_id"], poker_group))
+        players += toList(db.description, db.fetchall())
+
+    # create a list of unique players by removing the duplicates from players
+    seen = set()
+    unique_players = []
+
+    for row in players:
+        if row["name"] not in seen:
+            seen.add(row["name"])
+            unique_players.append({"name": row["name"]})
+
+    # add in a nested directory called "gamenet" that has the net result of each player for each table.  If they didn't play for a table it enters "".
+    for unique_player in unique_players:
+        net = 0
+        for game in games:
+            # Get the net result for the current player at the current table.
+            db.execute("SELECT aliases_player_id FROM aliases WHERE aliases_alias = '%s'" % (unique_player["name"]))
+            player_id = db.fetchone()
+            db.execute("SELECT net FROM sessions WHERE sessions_player_id = '%s' AND sessions_game_id = '%s'" % (player_id[0], game["game_id"]))
+            gamenet = db.fetchone()
+
+            # Deal with the case that not all players play on all tables
+            table_net = str(gamenet[0]) if gamenet[0] else ""
+
+            # Add result to the nested dictionary of that player.
+            unique_player.setdefault("game_nets", []).append(table_net)
+
+            # Increase the day's net value for the result of that game
+            net += gamenet[0] if gamenet[0] else 0
+
+        # The net result for current player for the date in question.
+        unique_player["net"] = net
+
+    # Sort players by the total amount they made on the date in question
+    unique_players = sorted(unique_players, key = lambda i: i["net"], reverse=True)
+
+    return render_template("games.html", players = unique_players, gamedates = gamedates, games = games)
 
 
 

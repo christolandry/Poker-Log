@@ -42,6 +42,63 @@ def index():
     
     return render_template("index.html", players = get_players())
 
+
+@app.route("/register", methods=["GET", "POST"])
+def register():
+    """Register user"""
+
+    # User reached route via POST (as by submitting a form via POST)
+    if request.method == "POST":
+
+        username = request.form.get("username")
+        password = request.form.get("password")
+        confirmation = request.form.get("confirmation")
+
+        # -----Check username & password requirements------
+        # Ensure username was submitted and that it's unique
+        db.execute("SELECT * FROM users WHERE username = '%s'" % (username))
+        duplicates = db.fetchall()
+        if username == "" or len(duplicates) > 0:
+            return apology("must provide a unique username", 400)
+
+        # Ensure password was submitted and it matches the confirmation password
+        if password == "" or password != confirmation:
+            return apology("must provide password and have the password match the confirmation password", 400)
+
+        # Require password to be at least 8 characters in length
+        elif len(password) < 8:
+            return apology("Password must be at least 8 characters in length", 400)
+
+        # Require user's passwords to have some number of letters, numbers, and/or symbols.
+        elif password.isalpha():
+            return apology("Password must contain numbers and/or symbols")
+
+        # Find the highest db number and add one to be this db number for the user table
+        db.execute("SELECT db FROM users ORDER BY db DESC LIMIT 1")
+        currentHighestDb = db.fetchone()
+
+        newDb = 1 if currentHighestDb == None else int(currentHighestDb[0]) + 1
+
+        # Add new user: insert username and hashed password, db, & invite string
+        sql = """INSERT INTO users(username, hash, db) VALUES (%s, %s, %s)""" 
+        db.execute(sql, (username, generate_password_hash(password), newDb))
+        conn.commit()
+
+        # Get user id number
+        db.execute("SELECT id FROM users WHERE username = '%s'" % (username))
+        rows = db.fetchone()
+        
+        # Log user in
+        session["user_id"] = rows[0]
+
+        # Redirect user to home page
+        return redirect("/")
+
+    # User reached route via GET (as by clicking a link or via redirect)
+    else:
+        return render_template("register.html")
+
+
 #--------------Addtional Functions---------------------
 
 # Returns the players in the appropriate poker group in a list of dictionaries sorted by No Limit Hold'em cumlative winnings.

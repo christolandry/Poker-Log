@@ -145,6 +145,30 @@ def logout():
     # Redirect user to login form
     return redirect("/")
 
+@app.route("/newplayer", methods=["GET", "POST"])
+@login_required
+def newplayer():
+    """Enter player data"""
+
+    # User reached route via POST (as by submitting a form via POST)
+    if request.method == "POST":
+        players_db = get_db()     
+
+        sql = """INSERT INTO players (name, players_db, balance, nlh_cum, plo_cum, time_cum, venmo, cashapp, paypal, zelle, applepay, note) VALUES (%s, %s, 0, 0, 0, 0, %s, %s, %s, %s, %s, %s)"""
+        db.execute(sql, (request.form.get("name"), players_db, request.form.get("venmo"), request.form.get("cashapp"), request.form.get("paypal"),
+                         request.form.get("zelle"), request.form.get("applepay"), request.form.get("note")))
+        conn.commit()
+
+        return render_template("index.html", players = get_players())
+
+    else:
+        return render_template("newplayer.html")
+
+
+
+
+
+
 
 #--------------Addtional Functions---------------------
 

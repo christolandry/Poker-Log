@@ -1,0 +1,51 @@
+{% extends "layout.html" %}
+
+{% block title %}
+    Account History
+{% endblock %}
+
+{% block main %}
+    <section class="games">
+        <form class="wide" action="/player" method="post">
+            <div class="form-group">
+                <select class="form-control" name="player">
+                    <option disabled selected value>Players</option>
+                    {% for player in players %}
+                        <option value="{{ player.name }}">{{ player.name }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            <button class="btn" type="submit">Select Player</button>
+        </form>
+        <h2>{{ targetPlayer }}</h2>
+        <table class="table table-striped">
+            <thead>
+                <tr>
+                    <th>Date</th>
+                    <th>Table</th>
+                    <th>Type</th>
+                    <th>Big Blind</th>
+                    <th>Outcome</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for game in games %}
+                    <tr>
+                        <th>{{ game.date }}</th>
+                        <th>{{ game.table_num }}</th>
+                        <th class="upper">{{ game.type }}</th>
+                        <th>{{ game.bigblind | usd }}</th>
+                        <th>{{ game.net | usd }}</th>
+                    </tr>
+                {% endfor %}
+                <tr>
+                    <th></th>
+                    <th></th>
+                    <th></th>
+                    <th>Total</th>
+                    <th>{{ total | usd}}</th>
+                </tr>
+            </tbody>
+        </table>
+    </section>
+{% endblock %}

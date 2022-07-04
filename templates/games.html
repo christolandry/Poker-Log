@@ -1,0 +1,50 @@
+{% extends "layout.html" %}
+
+{% block title %}
+    Account History
+{% endblock %}
+
+{% block main %}
+    <section class="games">
+        <form class="wide" action="/games" method="post">
+            <div class="form-group">
+                <select class="form-control" name="date">
+                    <option disabled selected value>Select Date of Game(s)</option>
+                    {% for date in gamedates %}
+                        <option value="{{ date.date }}">Date: {{ date.date }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            <button class="btn" type="submit">Show Games</button>
+        </form>
+        <table class="table table-striped">
+            <thead>
+                <tr>
+                    <th></th>
+                        {% for game in games %}
+                            <th>{{ game.date }}</th>
+                        {% endfor %}
+                    <th></th>
+                </tr>
+                <tr>
+                    <th>Name</th>
+                        {% for game in games %}
+                            <th class="upper">{{ game.type }} / {{ game.bigblind | usd }}</th>
+                        {% endfor %}
+                    <th>Total</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for player in players %}
+                    <tr>
+                        <th>{{ player.name }}</th>
+                            {% for table in player.game_nets %}
+                                <th>{{ table }}</th>
+                            {% endfor %}
+                        <th>{{ player.net }}</th>
+                    </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </section>
+{% endblock %}

@@ -1,0 +1,48 @@
+{% extends "layout.html" %}
+
+{% block title %}
+    Account Summery
+{% endblock %}
+
+{% block main %}
+
+    <table class="table table-striped ">
+        <thead>
+            <tr>
+                <th>Name</th>
+                <th>Balance</th>
+                <th>Cumlative NLH</th>
+                <th>Cumlative PLO</th>
+                <th>Cumlative Time</th>
+                <th>Venmo</th>
+                <th>Cashapp</th>
+                <th>Paypal</th>
+                <th>Zelle</th>
+                <th>Applepay</th>
+                <th>Note</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for person in players %}
+                <tr>
+                    <th>
+                        <form action="/player" method="post">
+                            <button class="indexLink" type="submit" name="player" value="{{ person.name }}">{{ person["name"] }}</button>
+                        </form>
+                    </th>
+                    <th>${{ person["balance"] }}</th>
+                    <th>{{ person["nlh_cum"] }}</th>
+                    <th>{{ person["plo_cum"] }}</th>
+                    <th>{{ person["time_cum"] }}</th>
+                    <th>{{ person["venmo"] }}</th>
+                    <th>{{ person["cashapp"] }}</th>
+                    <th>{{ person["paypal"] }}</th>
+                    <th>{{ person["zelle"] }}</th>
+                    <th>{{ person["applepay"] }}</th>
+                    <th>{{ person["note"] }}</th>
+                </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+
+{% endblock %}

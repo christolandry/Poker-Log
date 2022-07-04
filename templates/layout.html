@@ -1,0 +1,67 @@
+<!DOCTYPE html>
+
+<html lang="en">
+
+    <head>
+
+        <meta charset="utf-8">
+        <meta name="viewport" content="initial-scale=1, width=device-width">
+
+        <!--Font Import-->
+        <link rel="preconnect" href="https://fonts.googleapis.com">
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+        <link href="https://fonts.googleapis.com/css2?family=Roboto:ital,wght@0,100;0,400;0,700;1,100;1,300;1,700&family=Source+Sans+Pro&display=swap" rel="stylesheet">
+
+        <!-- https://favicon.io/emoji-favicons/money-mouth-face/ -->
+        <link href="/static/favicon.ico" rel="icon">
+
+        <!-- CSS -->
+
+       <link href="/static/styles.css" rel="stylesheet">
+
+        <title>Poker Log: {% block title %}{% endblock %}</title>
+
+    </head>
+
+    <body>
+
+        <nav class="navbar">
+            <a class="nav-icon" href="/"><span class="logo">POKER LOG: </span>The database</a>
+            {% if session.user_id %}
+                <ul class="align-left">
+                    <li><a class="nav-link" href="/newplayer">Add Player</a></li>
+                    <li><a class="nav-link" href="/alias">Add Alias</a></li>
+                    <li><a class="nav-link" href="/addgame">Add Game</a></li>
+                    <li><a class="nav-link" href="/games">Games</a></li>
+                    <li><a class="nav-link" href="/player">Players</a></li>
+                </ul>
+                <ul class="align-right">
+                    <li><a class="nav-link" href="/logout">Log Out</a></li>
+                </ul>
+            {% else %}
+                <ul class="align-right">
+                    <li><a class="nav-link" href="/register">Register</a></li>
+                    <li><a class="nav-link" href="/login">Log In</a></li>
+                </ul>
+            {% endif %}
+        </nav>
+
+        {% if get_flashed_messages() %}
+            <header>
+                <div class="alert alert-primary border text-center" role="alert">
+                    {{ get_flashed_messages() | join(" ") }}
+                </div>
+            </header>
+        {% endif %}
+
+        <main class="container text-center">
+            {% block main %}{% endblock %}
+        </main>
+
+        <footer class="text-center">
+            Beta Mode
+        </footer>
+
+    </body>
+
+</html>

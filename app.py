@@ -322,6 +322,37 @@ def games():
     return render_template("games.html", players = unique_players, gamedates = gamedates, games = games)
 
 
+@app.route("/player", methods=["GET", "POST"])
+@login_required
+def player():
+    """Shows Games"""
+    # get the names of all the players so they can be selected in the drop down menu.
+    poker_group = get_db()
+    db.execute("SELECT name FROM players WHERE players_db = '%s' ORDER BY name" % (poker_group))
+    allPlayers = toList(db.description, db.fetchall())
+    netTotal = 0
+
+    if request.method == "POST":
+        targetPlayer = request.form.get("player")
+        
+        # get the game info and results from all games played by selected person.
+        db.execute("SELECT game_id, date, type, bigblind, table_number FROM games JOIN sessions ON games.game_id = sessions.sessions_game_id JOIN players ON sessions.sessions_player_id = players.player_id WHERE (name = '%s' AND games_db = '%s')" % (targetPlayer, poker_group))
+        games = toList(db.description, db.fetchall())
+        
+        # add in the net to each game they played and add it to the player's total
+        for game in games:
+            db.execute("SELECT net FROM sessions WHERE sessions_game_id = '%s'" % (game["game_id"]))
+            net = toList(db.description, db.fetchall())
+            net = float(net[0]["net"])
+            game["net"] = net
+            netTotal += net
+
+        return render_template("player.html", players = allPlayers, targetPlayer = targetPlayer, total = netTotal, games = games)
+
+    else:
+
+        return render_template("player.html", players = allPlayers, total = netTotal)
+
 #--------------Addtional Functions---------------------
 
 # Returns the players in the appropriate poker group in a list of dictionaries sorted by No Limit Hold'em cumlative winnings.

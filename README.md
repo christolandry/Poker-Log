@@ -6,7 +6,7 @@
 **Solution:**
 This project allows users to register, add the players in their group, add the aliases each player uses each game, and then upload the ledger file (.csv) from each game to keep track of player results.  Results can be viewed by cumulative player results, individual player results showing each game they played in, and the results of all games on a specific day.
 
-**Link to project:** poker-log-service.efjajuvn60chi.us-east-1.cs.amazonlightsail.com
+**Link to project:** https://poker-log-service.efjajuvn60chi.us-east-1.cs.amazonlightsail.com
 ![alt tag](poker-log.gif)
 
 ## How It's Made:

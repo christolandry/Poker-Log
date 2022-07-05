@@ -1,4 +1,5 @@
-# Poker Log: A fullstack web app to track a poker groups results over time hosted on AWS Lightsail with an database on AWS RDS.
+# Poker Log 
+**A fullstack web app to track a poker groups results over time hosted on AWS Lightsail with an database on AWS RDS.**
 
 **Problem:** I play poker with the same group of people on a website called pokernow.club.  The host of our group wanted to track the results of people over time in a clean and concise format, which we didn’t have. 
 
@@ -13,7 +14,7 @@ This project allows users to register, add the players in their group, add the a
 **Tech used:** Python, Flask, Jinja, MySQL (AWS RDS), AWS Lightsail (in a Docker container), HTML, CSS
 
 <h6>Index</h6>
-<p>Displays all players in your poker group (each user has their own poker group) with their poker results, payment info, and a note.  It is sorted by each player's No Limit Hold'em cumlative results</p>
+<p>Displays all players in your poker group (each user has their own poker group) with their poker results, payment info, and a note.  It is sorted by each player's No Limit Hold'em cumulative results</p>
 <h6>Add Player</h6>
 <p>This page adds a player to the correct poker group along with their associated information</p>
 <h6>Add Alias</h6>
@@ -21,7 +22,7 @@ This project allows users to register, add the players in their group, add the a
 <h6>Add Game</h6>
 <p>Takes in information about the game and the ledger .csv file to enter in the results of each game</p>
 <h6>Games</h6>
-<p>Shows the results of all games on a choosen date (multiple tables can be in play, each uploaded as their own game)</p>
+<p>Shows the results of all games on a chosen date (multiple tables can be in play, each uploaded as their own game)</p>
 <h6>Players</h6>
 <p>Displays each game a player has played in along with the result.</p>
 
@@ -40,7 +41,7 @@ The goal was to host a full-stack web app with the associated database on AWS, w
   <li>Add an environmental variable for the password to the database in used in app.py</li>
   <li>Database structure concerning the association of player Id's and the aliases they used in game is a not correct.  It will not work at scale as it doesn't allow for duplicate aliases.</li>
   <li>Track Payments to make sure everyone has paid up / received their money each game</li>
-  <li>Make the wesite responsive</li>
+  <li>Make the website responsive</li>
   <li>Allow multiple log ins to the same poker group with read/write permissions</li>
 </ul>
 

@@ -23,7 +23,7 @@ db = conn.cursor()
 # Configure application
 app = Flask(__name__)
 
-# Ensure responses aren't cached
+# Ensure responses aren't cached | Credit: Harvard's CS50 Finanace
 @app.after_request
 def after_request(response):
     response.headers["Cache-Control"] = "no-cache, no-store, must-revalidate"
@@ -31,10 +31,10 @@ def after_request(response):
     response.headers["Pragma"] = "no-cache"
     return response
 
-# Custom filter
+# Custom filter | Credit: Harvard's CS50 Finanace
 app.jinja_env.filters["usd"] = usd
 
-# Configure session to use filesystem (instead of signed cookies)
+# Configure session to use filesystem (instead of signed cookies) | Credit: Harvard's CS50 Finanace
 app.config["SESSION_FILE_DIR"] = mkdtemp()
 app.config["SESSION_PERMANENT"] = False
 app.config["SESSION_TYPE"] = "filesystem"
@@ -379,13 +379,13 @@ def toList(titles, data):
         listOfDictionaries.append(pair)
     return listOfDictionaries
 
-def errorhandler(e):
+def errorhandler(e): #| Credit: Harvard's CS50 Finanace
     """Handle error"""
     if not isinstance(e, HTTPException):
         e = InternalServerError()
     return apology(e.name, e.code)
 
-# Listen for errors
+# Listen for errors | Credit: Harvard's CS50 Finanace
 for code in default_exceptions:
     app.errorhandler(code)(errorhandler)
 

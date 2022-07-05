@@ -5,6 +5,7 @@ from flask_session import Session
 from tempfile import mkdtemp
 from werkzeug.exceptions import default_exceptions, HTTPException, InternalServerError
 from werkzeug.security import check_password_hash, generate_password_hash
+
 from helpers import apology, login_required, usd
 
 # Connect to RDS
@@ -103,6 +104,7 @@ def register():
     else:
         return render_template("register.html")
 
+
 @app.route("/login", methods=["GET", "POST"])
 def login():
     """Log user in"""
@@ -150,6 +152,7 @@ def logout():
     # Redirect user to login form
     return redirect("/")
 
+
 @app.route("/newplayer", methods=["GET", "POST"])
 @login_required
 def newplayer():
@@ -169,6 +172,125 @@ def newplayer():
     else:
         return render_template("newplayer.html")
 
+
+@app.route("/addgame", methods=["GET", "POST"])
+@login_required
+def addgame():
+    """Add a new game to the database"""
+    poker_group = get_db()
+
+    # User reached route via POST (as by submitting a form via POST)
+    if request.method == "POST":
+
+        db.execute("SELECT player_id FROM players WHERE name = '%s'" % (request.form.get("bank")))
+        bankID = db.fetchone()
+
+        if bankID is None:
+            return apology("must choose a player for bank", 400)
+
+        #Insert the game into the games table
+        sql = """INSERT INTO games (games_db, date, type, bigblind, table_number, bank, track_money) VALUES (%s, %s, %s, %s, %s, %s, %s)"""
+        db.execute(sql, (poker_group, request.form.get("date"), request.form.get("type"), request.form.get("bigblind"),
+                         request.form.get("table_num"), bankID[0], request.form.get("trackmoney")))
+        conn.commit()
+
+        # How to upload files: https://gist.github.com/dasdachs/69c42dfcfbf2107399323a4c86cdb791
+        csv_file = request.files['fileupload']
+        csv_file = TextIOWrapper(csv_file, encoding='utf-8')
+        csv_reader = reader(csv_file, delimiter=',')
+
+        db.execute("SELECT game_id FROM games WHERE games_db = '%s' ORDER BY game_id DESC LIMIT 1" % (poker_group))
+        game_id = db.fetchone()
+        game_id = game_id[0]
+        counter = 0
+
+        # Read the csv and insert each player into a sessions tab.
+        for row in csv_reader:
+            if counter:
+                    buyin = round(float(row[4])/100,2)
+                    buyout = round(float(row[5])/100,2) if row[5] else ""
+                    stack = round(float(row[6])/100,2) if row[6] else ""
+                    net = round(float(row[7])/100,2)
+                    db.execute("SELECT aliases_player_id FROM aliases WHERE aliases_alias = '%s'" % (row[0]))
+                    sessions_player_id = db.fetchone()
+
+                    if sessions_player_id is None:
+                        return apology("must enter all aliases before uploading a game", 400)                        
+
+                    sql = """INSERT INTO sessions (sessions_game_id, sessions_player_id, alias, buyin, buyout, stack, net) VALUES (%s, %s, %s, %s, %s, %s, %s)"""
+                    db.execute(sql, (game_id, sessions_player_id[0], row[0], buyin, buyout, stack, net))
+                    conn.commit()
+            counter += 1
+
+        return redirect("/games")
+
+    else:
+        return render_template("addgame.html", players = get_players(), games = get_games())
+
+
+@app.route("/games", methods=["GET", "POST"])
+@login_required
+def games():
+    """Shows Games"""
+    poker_group = get_db()
+
+    # get the dates games happend so they can be selected in the drop down menu.
+    db.execute("SELECT date FROM games WHERE games_db = '%s' GROUP BY date ORDER BY date DESC LIMIT 10" % (poker_group))
+    gamedates = toList(db.description, db.fetchall())
+
+    # date of game requested, default is the lastest date a game was played if a date wasn't requested
+    request_date = request.form.get("date")
+    db.execute("SELECT date FROM games WHERE games_db = '%s' ORDER BY date DESC LIMIT 1" % (poker_group))
+    latest_date = db.fetchone()
+    if latest_date is None:
+        return render_template("games.html")
+    date = request_date if request_date else latest_date[0]
+
+    # get game ids from that date.
+    db.execute("SELECT * FROM games WHERE (date = '%s' AND games_db = '%s') ORDER BY table_number" % (date, poker_group))
+    games = toList(db.description, db.fetchall())
+
+    # get all players who played on the date in question.
+    players = []
+    for row in games:
+        db.execute("SELECT name FROM players JOIN sessions ON players.player_id = sessions.sessions_player_id WHERE (sessions_game_id = '%s' AND players_db = '%s')" % (row["game_id"], poker_group))
+        players += toList(db.description, db.fetchall())
+
+    # create a list of unique players by removing the duplicates from players
+    seen = set()
+    unique_players = []
+
+    for row in players:
+        if row["name"] not in seen:
+            seen.add(row["name"])
+            unique_players.append({"name": row["name"]})
+
+    # add in a nested directory called "gamenet" that has the net result of each player for each table.  If they didn't play for a table it enters "".
+    for unique_player in unique_players:
+        net = 0
+        for game in games:
+            # Get the net result for the current player at the current table.
+            db.execute("SELECT aliases_player_id FROM aliases WHERE aliases_alias = '%s'" % (unique_player["name"]))
+            player_id = db.fetchone()
+            db.execute("SELECT net FROM sessions WHERE sessions_player_id = '%s' AND sessions_game_id = '%s'" % (player_id[0], game["game_id"]))
+            gamenet = db.fetchone()
+
+            # Deal with the case that not all players play on all tables
+            table_net = str(gamenet[0]) if gamenet[0] else ""
+
+            # Add result to the nested dictionary of that player.
+            unique_player.setdefault("game_nets", []).append(table_net)
+
+            # Increase the day's net value for the result of that game
+            net += gamenet[0] if gamenet[0] else 0
+
+        # The net result for current player for the date in question.
+        unique_player["net"] = net
+
+    # Sort players by the total amount they made on the date in question
+    unique_players = sorted(unique_players, key = lambda i: i["net"], reverse=True)
+
+    return render_template("games.html", players = unique_players, gamedates = gamedates, games = games)
 
 @app.route("/alias", methods=["GET", "POST"])
 @login_required
@@ -195,136 +317,6 @@ def alias():
 
     else:
         return render_template("alias.html", players = get_players())
-
-
-@app.route("/games", methods=["GET", "POST"])
-@login_required
-def games():
-    """Shows Games"""
-    poker_group = get_db()
-
-    # get the dates games happend so they can be selected in the drop down menu.
-    db.execute("SELECT date FROM games WHERE games_db = '%s' GROUP BY date ORDER BY date DESC LIMIT 10" % (poker_group))
-    gamedates = toList(db.description, db.fetchall())
-
-    # date of game requested, default is the lastest date a game was played if a date wasn't requested
-    request_date = request.form.get("date")
-    db.execute("SELECT date FROM games WHERE games_db = '%s' ORDER BY date DESC LIMIT 1" % (poker_group))
-    latest_date = db.fetchone()
-    if latest_date is None:
-        return render_template("games.html")
-    date = request_date if request_date else latest_date[0]
-
-    # get game ids from that date.
-    db.execute("SELECT * FROM games WHERE (date = '%s' AND games_db = '%s') ORDER BY table_number" % (date, poker_group))
-    games = toList(db.description, db.fetchall())
-
-    # get all players who played on the date in question.
-    players = []
-    for row in games:
-        db.execute("SELECT name FROM players JOIN sessions ON players.player_id = sessions.sessions_player_id WHERE (sessions_game_id = '%s' AND players_db = '%s')" % (row["game_id"], poker_group))
-        players += toList(db.description, db.fetchall())
-
-    # create a list of unique players by removing the duplicates from players
-    seen = set()
-    unique_players = []
-
-    for row in players:
-        if row["name"] not in seen:
-            seen.add(row["name"])
-            unique_players.append({"name": row["name"]})
-
-    # add in a nested directory called "gamenet" that has the net result of each player for each table.  If they didn't play for a table it enters "".
-    for unique_player in unique_players:
-        net = 0
-        for game in games:
-            # Get the net result for the current player at the current table.
-            db.execute("SELECT aliases_player_id FROM aliases WHERE aliases_alias = '%s'" % (unique_player["name"]))
-            player_id = db.fetchone()
-            db.execute("SELECT net FROM sessions WHERE sessions_player_id = '%s' AND sessions_game_id = '%s'" % (player_id[0], game["game_id"]))
-            gamenet = db.fetchone()
-
-            # Deal with the case that not all players play on all tables
-            table_net = str(gamenet[0]) if gamenet[0] else ""
-
-            # Add result to the nested dictionary of that player.
-            unique_player.setdefault("game_nets", []).append(table_net)
-
-            # Increase the day's net value for the result of that game
-            net += gamenet[0] if gamenet[0] else 0
-
-        # The net result for current player for the date in question.
-        unique_player["net"] = net
-
-    # Sort players by the total amount they made on the date in question
-    unique_players = sorted(unique_players, key = lambda i: i["net"], reverse=True)
-
-    return render_template("games.html", players = unique_players, gamedates = gamedates, games = games)
-
-
-@app.route("/games", methods=["GET", "POST"])
-@login_required
-def games():
-    """Shows Games"""
-    poker_group = get_db()
-
-    # get the dates games happend so they can be selected in the drop down menu.
-    db.execute("SELECT date FROM games WHERE games_db = '%s' GROUP BY date ORDER BY date DESC LIMIT 10" % (poker_group))
-    gamedates = toList(db.description, db.fetchall())
-
-    # date of game requested, default is the lastest date a game was played if a date wasn't requested
-    request_date = request.form.get("date")
-    db.execute("SELECT date FROM games WHERE games_db = '%s' ORDER BY date DESC LIMIT 1" % (poker_group))
-    latest_date = db.fetchone()
-    if latest_date is None:
-        return render_template("games.html")
-    date = request_date if request_date else latest_date[0]
-
-    # get game ids from that date.
-    db.execute("SELECT * FROM games WHERE (date = '%s' AND games_db = '%s') ORDER BY table_number" % (date, poker_group))
-    games = toList(db.description, db.fetchall())
-
-    # get all players who played on the date in question.
-    players = []
-    for row in games:
-        db.execute("SELECT name FROM players JOIN sessions ON players.player_id = sessions.sessions_player_id WHERE (sessions_game_id = '%s' AND players_db = '%s')" % (row["game_id"], poker_group))
-        players += toList(db.description, db.fetchall())
-
-    # create a list of unique players by removing the duplicates from players
-    seen = set()
-    unique_players = []
-
-    for row in players:
-        if row["name"] not in seen:
-            seen.add(row["name"])
-            unique_players.append({"name": row["name"]})
-
-    # add in a nested directory called "gamenet" that has the net result of each player for each table.  If they didn't play for a table it enters "".
-    for unique_player in unique_players:
-        net = 0
-        for game in games:
-            # Get the net result for the current player at the current table.
-            db.execute("SELECT aliases_player_id FROM aliases WHERE aliases_alias = '%s'" % (unique_player["name"]))
-            player_id = db.fetchone()
-            db.execute("SELECT net FROM sessions WHERE sessions_player_id = '%s' AND sessions_game_id = '%s'" % (player_id[0], game["game_id"]))
-            gamenet = db.fetchone()
-
-            # Deal with the case that not all players play on all tables
-            table_net = str(gamenet[0]) if gamenet[0] else ""
-
-            # Add result to the nested dictionary of that player.
-            unique_player.setdefault("game_nets", []).append(table_net)
-
-            # Increase the day's net value for the result of that game
-            net += gamenet[0] if gamenet[0] else 0
-
-        # The net result for current player for the date in question.
-        unique_player["net"] = net
-
-    # Sort players by the total amount they made on the date in question
-    unique_players = sorted(unique_players, key = lambda i: i["net"], reverse=True)
-
-    return render_template("games.html", players = unique_players, gamedates = gamedates, games = games)
 
 
 @app.route("/player", methods=["GET", "POST"])

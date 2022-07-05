@@ -1,1 +1,8 @@
 https://poker-log-service.efjajuvn60chi.us-east-1.cs.amazonlightsail.com/
+
+Login with test data:
+
+User: brian
+Password: D$VV$w9S$Xt#
+
+A test Excel file to upload is located in the github in excel folder.

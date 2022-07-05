@@ -1,0 +1,8 @@
+{
+    "flask": {
+        "image": ":poker-log-service.poker-log.5",
+        "ports": {
+            "5000": "HTTP"
+        }
+    }
+}

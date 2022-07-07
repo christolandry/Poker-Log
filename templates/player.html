@@ -1,7 +1,7 @@
 {% extends "layout.html" %}
 
 {% block title %}
-    Account History
+    Player History
 {% endblock %}
 
 {% block main %}
@@ -32,7 +32,7 @@
                 {% for game in games %}
                     <tr>
                         <th>{{ game.date }}</th>
-                        <th>{{ game.table_num }}</th>
+                        <th>{{ game.table_number }}</th>
                         <th class="upper">{{ game.type }}</th>
                         <th>{{ game.bigblind | usd }}</th>
                         <th>{{ game.net | usd }}</th>

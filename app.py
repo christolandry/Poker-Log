@@ -12,7 +12,7 @@ from helpers import apology, login_required, usd
 import pymysql
 
 conn = pymysql.connect(
-        host= 'pokerlog.chaddfkmxw3n.us-east-1.rds.amazonaws.com', 
+        host= 'poker-log.chaddfkmxw3n.us-east-1.rds.amazonaws.com', 
         port = 3306,
         user = 'masterUsername', 
         password = 'KgxVzgz&GKefK6Qk^W28',
@@ -89,6 +89,11 @@ def register():
         sql = """INSERT INTO users(username, hash, db) VALUES (%s, %s, %s)""" 
         db.execute(sql, (username, generate_password_hash(password), newDb))
         conn.commit()
+
+        # Add poker group for newly registered user
+        
+        sql = """INSERT INTO poker_group (poker_group_id, owner) VALUES (%s, %s)"""
+        db.execute(sql, (newDb, username))
 
         # Get user id number
         db.execute("SELECT id FROM users WHERE username = '%s'" % (username))
@@ -182,16 +187,10 @@ def addgame():
     # User reached route via POST (as by submitting a form via POST)
     if request.method == "POST":
 
-        db.execute("SELECT player_id FROM players WHERE name = '%s'" % (request.form.get("bank")))
-        bankID = db.fetchone()
-
-        if bankID is None:
-            return apology("must choose a player for bank", 400)
-
         #Insert the game into the games table
-        sql = """INSERT INTO games (games_db, date, type, bigblind, table_number, bank, track_money) VALUES (%s, %s, %s, %s, %s, %s, %s)"""
+        sql = """INSERT INTO games (games_db, date, type, bigblind, table_number) VALUES (%s, %s, %s, %s, %s)"""
         db.execute(sql, (poker_group, request.form.get("date"), request.form.get("type"), request.form.get("bigblind"),
-                         request.form.get("table_num"), bankID[0], request.form.get("trackmoney")))
+                         request.form.get("table_num")))
         conn.commit()
 
         # How to upload files: https://gist.github.com/dasdachs/69c42dfcfbf2107399323a4c86cdb791

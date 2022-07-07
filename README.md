@@ -1,5 +1,5 @@
 # Poker Log 
-**A fullstack web app to track a poker groups results over time hosted on AWS Lightsail with an database on AWS RDS.**
+**A fullstack web app to track a poker groups results over time hosted on AWS Lightsail with a database on AWS RDS.**
 
 **Problem:** I play poker with the same group of people on a website called pokernow.club.  The host of our group wanted to track the results of people over time in a clean and concise format, which we didn’t have. 
 
